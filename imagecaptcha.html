@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html>
+  <head>
+   <link rel="stylesheet" href="http://netdna.bootstrapcdn.com/twitter-bootstrap/2.3.2/css/bootstrap-combined.min.css">
+  
+<style>
+    .classic{
+    float: left;
+    margin-left: 15px;
+    margin-bottom: 20px;
+    text-align: center;
+
+    }
+
+
+    #locker{
+    z-index:100000;
+    border: 1px solid;
+    margin-right: 10px;
+    box-shadow: inset 2px 2px 2px grey;
+
+    }
+    .draggable{
+    border: 1px solid;
+    width: 30px;
+    box-shadow: 2px 2px 2px grey;
+    }
+
+</style>  
+  </head>
+  <body>
+    
+
+<div class="container-fluid">  
+	<div class="row-fluid">
+		<div class="span4" style="background:#efefff;">
+			<div class="alert alert-info" id="info"></div>
+			<button class="btn classic" type="button" style="margin-top: -3px;" title="Refresh" id="refresh"><i class="icon-refresh"></i></button>				
+			<div class="draggable snappable classic" name="glass" id="1"><i class="icon-glass"></i></div>
+			<div class="draggable snappable classic" name="music" id="2"><i class="icon-music"></i></div> 
+			<div class="draggable snappable classic" name="heart" id="3"><i class="icon-heart"></i></div>
+			<div class="draggable snappable classic" name="pencil" id="4"><i class="icon-pencil"></i></div>
+			<div name="lock" id="locker" class="snappable classic" style="float:right;" ><i class=" icon-lock"></i></div>			
+		</div> 
+	</div>	
+	<div class="row-fluid">
+		<div class="span4">
+			<div class="alert alert-success" id="success" style="display:none;">Success</div>
+			<div class="alert alert-error" id="error" style="display:none;">Please Try</div>
+		</div>
+	</div>  
+</div>
+<script src="js/jquery.min.js"></script>
+<script src="js/jquery-ui.js"></script>
+<script>
+var draggedName;
+var draggedId;
+var disabled;
+$(function(){
+$('#refresh').click(function(){
+		initCaptcha();
+	});
+	
+	initCaptcha();
+		$(".draggable").draggable({
+		snap:".snappable",
+		revert: true
+		});	
+		
+	$("#locker").droppable({
+		accept:".draggable",
+		drop:function(event,ui){
+			var dragged = ui.draggable;
+			if(dragged.attr("name") == draggedName){
+				dragged.draggable({"disabled":true, "revert":false});				
+				dragged.hide();
+				$("#locker").animate({width:'32px'});
+				$("#locker").css('background','grey');	
+				$('#error').hide(); $('#success').show(500);
+				disabled=$( ".draggable" ).draggable( "disable" );
+			}else{
+				$("#locker").animate({width:'120px',opacity:'0.0'}).animate({width:'100px',opacity:'1.0'});								
+				$('#success').hide(); $('#error').hide().show(500);				
+			}			
+		}		
+	});	
+});
+	
+
+
+
+function initCaptcha(){
+	draggedId = Math.round(1+(4-1)*Math.random());
+	draggedName = $("#"+draggedId).attr("name");	
+	$("#info").html(" Drag <b>"+draggedName+"</b> to locker ");	
+	if(disabled){
+		$( ".draggable" ).css({'top':'0','left':'0'}).draggable( "enable" ).draggable( "option", "revert", true ).show();
+	}
+	$('#success,#error').hide();$('#locker').css('width', '100px').css('height','22px').css('background','white')
+	
+
+}
+
+</script>
+  </body>
+
+</html>

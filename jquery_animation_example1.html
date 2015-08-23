@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+</head>
+<body>
+  <div id="container">
+  </div>
+  <script src="js/jquery.min.js"></script>
+  <script>
+    for (var i = 0; i < 20; i++) {
+      $("#container").append('<div class="dynaDiv">&nbsp</div>')
+    }
+    $('.dynaDiv').each(function() {
+      var r = rand(0, 255);
+      var g = rand(0, 255);
+      var b = rand(0, 255);
+      var dim = rand(10, 100);
+      var x = rand(0, 400);
+      var y = rand(0, 400);
+      $(this).css({
+        'position': 'absolute',
+        'background': 'rgba(' + r + ',' + g + ',' + b + ',0.3)',
+        'border-color': 'rgba(' + r + ',' + g + ',' + b + ',1)',
+        'width': dim,
+        'height': dim,
+        'left': x,
+        'top': y
+      });
+      animate($(this));
+    });
+    function animate(obj) {
+      var dim = rand(10, 100);
+      obj.animate({
+          'left': rand(10, 600),
+          'top': rand(10, 400),
+          'width': dim,
+          'height': dim
+        },
+        rand(2000, 3000), //time
+        function() {
+          animate($(this))
+        } //callback
+      );
+    }
+    //finds a random number between a and b
+    function rand(a, b) {
+      return Math.round(a + (b - a) * Math.random());
+    }
+  </script>
+</body>
+</html>

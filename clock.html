@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+</head>
+<body>
+  <canvas id="mycanvas" width="150" height="150"></canvas>
+  <br>
+  <div id="numtime" style="width:150px;padding-left:50px">
+    <span id="hh"></span>:<span id="mm"></span>:<span id="ss"></span>
+  </div>
+  <script>
+    var canvas, ctx, numtime, n = 0, cx = 100, cy = 100, cr = 100;
+    canvas = document.getElementById('mycanvas');
+    numtime = document.getElementById("numtime");
+    cx = canvas.width / 2;
+    cy = canvas.height / 2;
+    cr = canvas.height / 3;
+
+    numtime.style.position = 'relative';
+    numtime.style.left = cx - cr / 2;
+    ctx = canvas.getContext('2d');
+    ctx.translate(cx, cy);
+    ctx.rotate(Math.PI / 2);
+    ctx.scale(-1, 1);
+    ctx.translate(-cx, -cy);
+
+    var renderClock = function() {
+      var cDate = new Date();
+      var hh = cDate.getHours();
+      var mm = cDate.getMinutes();
+      var ss = cDate.getSeconds();
+
+      document.getElementById("hh").textContent = hh;
+      document.getElementById("mm").textContent = mm;
+      document.getElementById("ss").textContent = ss;
+
+      ctx.fillStyle = 'white';
+      ctx.fillRect(0, 0, 600, 400);
+
+      drawTimeCurve(ctx, cx, cy, cr, (360 - hh * 5 * 6) * Math.PI / 180, 'rgba(255,255,0,0.3)');
+      drawTimeCurve(ctx, cx, cy, 0.7 * cr, (360 - mm * 6) * Math.PI / 180, 'rgba(0,150,0,0.6)');
+      drawTimeCurve(ctx, cx, cy, 0.4 * cr, (360 - ss * 6) * Math.PI / 180, 'rgba(0,0,0,0.5)');
+      drawTimePoints(ctx, cx, cy, 0.8 * cr);
+	  
+      setTimeout(renderClock, 1000);
+    }
+
+    function drawTimePoints(ctx, cx, cy, r) {
+      for (th = 0; th < 360; th = th + 30) {
+        var r = 0.9 * cr; //radius
+        ctx.beginPath();
+        var x = r * Math.cos(th * Math.PI / 180);
+        var y = r * Math.sin(th * Math.PI / 180);
+        ctx.arc(cx + x, cy + y, 0.04 * cr, 0, 0.1, true); //	
+        ctx.stroke();
+        ctx.closePath();
+      }
+    }
+
+    function drawTimeCurve(ctx, cx, cy, r, angle, fillstyle) {
+      ctx.beginPath();
+      ctx.fillStyle = fillstyle;
+      ctx.moveTo(cx, cy);
+      ctx.arc(cx, cy, r, 0, angle, true); //		  
+      ctx.moveTo(cx, cy);
+      ctx.closePath();
+      ctx.stroke();
+      ctx.fill();
+    }
+    renderClock();
+  </script>
+</body>
+
+
+</html>

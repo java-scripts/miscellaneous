@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    table {
+      background: none repeat scroll 0 0 rgb(226, 192, 255);
+      border: 1px solid;
+      color: rgb(96, 74, 119);
+      margin: 2px;
+      padding: 2px;
+    }
+    td {
+      padding: 0 5px;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="mycanvas" width="600" height="400"></canvas>
+  <br/>
+  <br/>
+  <br/>
+  <div style="float:left">
+    <table>
+      <tr>
+        <td>LowerLimit
+          <input type="text" value="-100" id="lowerLimit" style="width:50px"> </td>
+        <td>UpperLimit
+          <input type="text" value="100" id="upperLimit" style="width:50px"> </td>
+        <td>Resolution
+          <input type="text" value="500" id="resolution" style="width:50px"> </td>
+        <td rowspan="2">
+          <input type="button" value="plot" onclick="plot();" style="width:120px;height:100px">
+        </td>
+      </tr>
+      <tr>
+        <td colspan="3"><span style="width:50px">f(x)= </span>
+          <textarea id="expression" style="width:410px">x*sin(x) </textarea>
+        </td>
+
+      </tr>
+    </table>
+  </div>
+  <script>
+	var canvas = document.getElementById("mycanvas"),ctx= canvas.getContext('2d'), width=canvas.width, height= canvas.height;  
+    var xmin, xmax, ymin, ymax;
+    var dxmin, dxmax, dymin, dymax; //are destination(canvas)min and max
+    function plot() {
+      ctx.fillStyle = "rgb(245,234,255)";
+      ctx.fillRect(0, 0, width, height);
+      //xmin,xmax are the  limits specified for the function 
+      //fmin,fmax should be calculated for the given f(x)		
+      dxmin = 50;
+      dxmax = width - 20;
+      dymin = 20;
+      dymax = height - 20;
+      var x, y, dx, dy; //x,y in math space dx,dy in destination space
+
+      xmin = parseFloat(document.getElementById("lowerLimit").value);
+      xmax = parseFloat(document.getElementById("upperLimit").value);
+      var expr = document.getElementById("expression").value;
+      expr = mathEval(expr); //converting expressions like sin --> Math.sin		
+      var cx = width / 2;
+      var cy = height / 2;
+      var resol = parseFloat(document.getElementById("resolution").value);
+      var incr = (xmax - xmin) / resol; //increment	
+      //(dx-dxmin)/(dxmax-dxmin) = (x-xmin)/(xmax-xmin) a linear mapping from math world to canvas
+
+      ymin = Number.MAX_VALUE;
+      ymax = -ymin;
+
+      //finding the max and min values with in the limits
+      for (x = xmin; x <= xmax; x += incr) {
+        try {
+          y = eval(expr);
+          if (y > 1000) y = 1000;
+          else if (y < -1000) y = 1000;
+          } catch (err) {
+
+          }
+        if (y > ymax) {
+          ymax = y;
+        }
+        if (y < ymin) {
+          ymin = y;
+        }
+      }
+      drawOrdinates();
+      //plotting autoscalled function
+      ctx.strokeStyle = "#000000";
+
+      ctx.beginPath();
+      for (x = xmin; x <= xmax; x += incr) {
+        try {
+          y = eval(expr);
+          if (y > 1000) y = 1000;
+          else if (y < -1000) y = 1000;
+        } catch (err) {
+
+        }
+        dx = (x - xmin) * (dxmax - dxmin) / (xmax - xmin) + dxmin;
+        dy = (y - ymin) * (dymax - dymin) / (ymax - ymin) + dymin;
+        ctx.lineTo(dx, height - dy);
+      }
+      //ctx.closePath();
+      ctx.stroke();
+    }
+    function drawOrdinates() {
+      ctx.fillStyle = '#00F';
+      ctx.font = '12px Sans-Serif';
+      //setting the quantized step 
+      var n = (xmax - xmin) / 10;
+      var k = Math.ceil(Math.log(n) / Math.log(10));
+      //k=Math.pow(10,k);		
+      n = n - n % 5 + 5; //to find the nearest multiple of k to show scale
+      var m = (ymax - ymin) / 10;
+      m = m - m % 5 + 5;
+      ctx.strokeStyle = "#dddddd";
+      for (x = 0; x <= xmax; x += n) {
+        dx = (x - xmin) * (dxmax - dxmin) / (xmax - xmin) + dxmin;
+        ctx.fillText(x.toFixed(1), dx, height - 5);
+        ctx.beginPath();
+        ctx.moveTo(dx, 20)
+        ctx.lineTo(dx, height - 20);
+        ctx.stroke();
+        ctx.closePath();
+      }
+      for (x = 0; x >= xmin; x -= n) {
+        dx = (x - xmin) * (dxmax - dxmin) / (xmax - xmin) + dxmin;
+        ctx.fillText(x.toFixed(1), dx, height - 5);
+        ctx.beginPath();
+        ctx.moveTo(dx, 20)
+        ctx.lineTo(dx, height - 20);
+        ctx.stroke();
+        ctx.closePath();
+      }
+      for (y = 0; y <= ymax; y += m) {
+        dy = (y - ymin) * (dymax - dymin) / (ymax - ymin) + dymin;
+        ctx.fillText(y.toFixed(1), 10, height - dy);
+        ctx.beginPath();
+        ctx.moveTo(20, dy)
+        ctx.lineTo(width - 20, dy);
+        ctx.stroke();
+        ctx.closePath();
+      }
+      for (y = 0; y >= ymin; y -= m) {
+        dy = (y - ymin) * (dymax - dymin) / (ymax - ymin) + dymin;
+        ctx.fillText(y.toFixed(1), 10, height - dy);
+        ctx.beginPath();
+        ctx.moveTo(20, dy)
+        ctx.lineTo(width - 20, dy);
+        ctx.stroke();
+        ctx.closePath();
+      }
+    }
+    function mathEval(exp) {
+      var reg = /(?:[a-z$_][a-z0-9$_]*)|(?:[;={}\[\]"'!&<>^\\?:])/ig,
+        valid = true;
+      // Detect valid JS identifier names and replace them
+      exp = exp.replace(reg, function($0) {
+        // If the name is a direct member of Math, allow	
+        if (Math.hasOwnProperty($0))
+          return "Math." + $0;
+        // Otherwise the expression is invalid
+        else if ($0 == 'x')
+          return 'x';
+        else
+          valid = false;
+      });
+      return exp;
+    }   
+    plot();
+  </script>
+</body>
+</html>

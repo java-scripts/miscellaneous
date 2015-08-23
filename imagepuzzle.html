@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html>
+
+  <head>  
+  <style>
+  
+  .puzzle{
+display: inline-block;
+background-image: url("");
+background-repeat: no-repeat;
+margin:0px;
+}
+.inactive{--box-shadow:inset 2px 2px 4px black;--border:1px solid grey;}
+.active{box-shadow:inset 0px 0px 10px black;}
+.td{padding:10px}
+.newline{	
+margin-top: -5.5px;
+background:yellow;
+--height:10px;
+
+}
+    
+    
+.autoselect{
+width: 100%;        
+        
+    }    
+  </style>
+  </head>
+
+  <body>
+    <div>
+<table border="1">
+<tr>
+<td style="width:100px">ImagePuzzle</td>
+<td colspan="2">
+Image Size
+<input type="range" id="sx" value="600" min="100" max="1000" step="50" onchange="loadImagefromURL()">
+</td>
+</tr>
+<tr>
+<td rowspan="3"></td>
+<td>
+<div id="orizinalImage"></div>
+<div id="puzzleImage" ></div></td>
+<td>
+<div><input type="button" value="Show Image" style="height:200px" onmousedown="showOrizinalImage('show');"
+onmouseup="showOrizinalImage('hide');"
+></div>
+<div >Step:<span id="stepCounter">0</span></div></td>
+</tr>
+<tr>
+
+<td  class="td">
+X Cells<input type="range" id="nx" value="4" min="1" max="10" step="1" onchange="restartPuzzle()">
+Y Cells<input type="range" id="ny" value="4" min="1" max="10" step="1" onchange="restartPuzzle()">
+
+</td>
+<td class="td">
+<input type="button" value="Shuffle" onclick="randomize(5)">
+</td>
+</tr>
+<tr>
+
+<td class="td">
+<input type="text"  id="bgimg" placeholder="Paste Image URL here" style="width:400px" value="http://katrinakaifpage.com/wp-content/uploads/2013/06/Katrina-Kaif-4.jpg">
+<input type="button" value="Load" style="width: 250px;" onclick="loadImagefromURL();">
+</td>
+</tr>
+</table>
+</div>
+Copy and Paste the below URLs<br>
+
+<input type="text" class="autoselect" onclick="autoSelect(this)" value="http://katrinakaifpage.com/wp-content/uploads/2013/06/Katrina-Kaif-4.jpg">  
+<br>    <input type="text" class="autoselect" onclick="autoSelect(this)" value="http://katrinakaiffans.com/wp-content/uploads/Katrina-Kaif-Quotes-HD-wallpaper.jpg"> 
+    
+
+  </body>
+  
+  <script src="js/jquery.min.js"></script>
+  
+  <script>
+  $(document).ready(function(){
+loadImagefromURL();	
+		$('#bgimg').focus(function(){
+			oldval=$(this).val();
+			$(this).val('');
+		}).blur(function(){			
+			if($(this).val()==""){
+				$(this).val(oldval.trim());			
+			}
+		});	
+});
+
+var initialState;//contains the positions of all elements
+var finalState;
+var oldObject=null;
+var newObject=null;
+
+function loadImagefromURL(){
+	$('#puzzleImage').hide();
+	bgurl = $('#bgimg').val();
+	sx=parseInt($('#sx').val());
+	//$('#orizinalImage').empty();
+	$('#orizinalImage').empty().append('<img src="'+bgurl+'" style="width:'+sx+'px">').show();
+	var image = $('#orizinalImage').children().get(0);		
+		image.onload=function(){					
+			x = image.width;y = image.height;			
+			$('#orizinalImage').hide();
+			restartPuzzle();				
+		};
+}
+
+function showOrizinalImage(cmd){
+		if(cmd=='show'){
+			$('#orizinalImage').show();
+			$('#puzzleImage').hide();
+		}else{
+			$('#orizinalImage').hide();
+			$('#puzzleImage').show();
+		}
+
+}
+function showStepCount(){
+$('#stepCounter').text(stepCounter++);
+}
+function restartPuzzle(){
+stepCounter=0;showStepCount();
+
+	nx = parseInt($('#nx').val(),10);if(nx<1 || nx>10)nx=4;
+	ny = parseInt($('#ny').val(),10);if(ny<1 || ny>10)ny=4;
+	//console.log(x+ " "+y);	
+	scale=sx/x;
+	sy = Math.round(y*scale);
+	//console.log(sx+" "+sy);
+	
+	dx =sx/nx;dy=sy/ny;
+	$('#puzzleImage').empty().css('width',sx).show();
+	
+	for(var b=0;Math.round(b)<sy;b+=dy){
+		for(var a=0;Math.round(a)<sx;a+=dx){			
+			$('#puzzleImage').append('<div class="puzzle inactive" style="background-position: '+(-a)+'px '+(-b)+'px; width:'+dx+'px; height:'+dy+'px"></div>');	
+				
+			}
+		
+		$('#puzzleImage').append('<div class="newline"></div>');
+	}
+	
+	$('.puzzle').css('background-image','url("'+bgurl+'")').css('background-size',sx);	
+	
+	initialState=getStateString();
+	randomize(Math.max(10,nx*ny));	
+	$('.puzzle').unbind('click');
+	$('.puzzle').click(function(){
+		if(oldObject==null){
+			oldObject=$(this);
+			oldObject.removeClass('inactive').addClass('active');
+		}else{
+			newObject=$(this);	
+			swapbackgroundPositions(oldObject,newObject);			
+			oldObject.addClass('inactive').removeClass('active');
+			oldObject=null;
+			finalState=getStateString();			
+			showStepCount();
+			if(initialState==finalState){
+				gameComplete();
+			}
+		}	
+	});
+}
+
+function gameComplete(){
+	alert('Done')
+}
+function getStateString(){
+	var state="";
+	$('.puzzle').each(function(){
+		state+=$(this).css('background-position');
+	});	
+	return state;
+}
+function randomize(n){
+stepCounter=0;showStepCount();
+	for(var i=0;i<n;i++){
+			randomShuffleImage();
+	}
+}
+function randomShuffleImage(){
+	var a=0;var b=$('.puzzle').length-1;
+	var obj1=$('.puzzle').eq(getRand(a,b));
+	var obj2=$('.puzzle').eq(getRand(a,b));
+	swapbackgroundPositions(obj1,obj2);
+}
+function swapbackgroundPositions(obj1, obj2){	
+	var pos1=obj1.css('background-position');
+	var pos2=obj2.css('background-position');
+	obj1.css('background-position',pos2);
+	obj2.css('background-position',pos1);	
+}
+function getRand(a,b){
+	return Math.round(a+(b-a)*Math.random());
+}
+function autoSelect(e){
+    e.select();
+}
+
+
+
+
+
+
+
+  </script>
+
+</html>

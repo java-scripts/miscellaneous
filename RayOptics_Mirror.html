@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <style>
+    table.inputsTable {
+      background: none repeat scroll 0 0 #C8FFC8;
+      border: thin solid;
+      float: left;
+      margin: 5px;
+      //position:absolute;
+    }
+    
+    table.lensTypeTable {
+      background: none repeat scroll 0 0 #FFFFC8;
+      border: thin solid;
+      //left: 671px;
+      padding: 3px;
+      position: absolute;
+      top: 8px;
+      margin: 5px;
+    }
+  </style>
+</head>
+
+<body onload="Init();">
+  <div id="canvasDiv1" class="canvasStyle">
+
+
+    <canvas id="mycanvas1" width="800" height="300"></canvas>
+
+
+    <table class="lensTypeTable">
+      <tr>
+        <td>Concave Mirror</td>
+        <td>
+          <input type="radio" name="lensGroup" id="convexLCB" onclick="lensTypeUpdate('concaveMirror')" value="convexLens" checked>
+        </td>
+      </tr>
+      <tr>
+        <td>Convex Mirror</td>
+        <td>
+          <input type="radio" name="lensGroup" id="concaveLCB" onclick="lensTypeUpdate('convexMirror')" value="concaveLens"> </td>
+      </tr>
+    </table>
+    <output id="console"></output>
+
+
+    <table class="inputsTable">
+      <tr>
+        <td style="width:50px;text-align:right;">u</td>
+        <td>
+          <input type="text" id="utext" value="100" style="width:50px">
+        </td>
+        <td>
+          <input type="button" value="Ok" id="ubutton" onclick="findSolTx('u');">
+        </td>
+
+        <td style="width:50px;text-align:right;">v</td>
+        <td>
+          <input type="text" id="vtext" value="100" style="width:50px">
+        </td>
+        <td>
+          <input type="button" value="Ok" id="vbutton" onclick="findSolTx('v');">
+        </td>
+
+        <td style="width:50px;text-align:right;">f</td>
+        <td>
+          <input type="text" id="ftext" value="50" style="width:50px">
+        </td>
+        <td>
+          <input type="button" value="Ok" id="fbutton" onclick="findSolTx('f');">
+        </td>
+
+        <td style="width:50px;text-align:right;">m</td>
+        <td>
+          <input type="text" id="mtext" value="1" style="width:50px">
+        </td>
+        <td>
+          <input type="button" value="Ok" id="mbutton" onclick="findSolTx('m');">
+        </td>
+        <td style="width:50px;text-align:right;"></td>
+        <td>
+          <input type="button" style="width:100px" value="Reset" id="mbutton" onclick="resetSolTx();">
+        </td>
+
+      </tr>
+    </table>
+
+
+  </div>
+  <script>
+    var ctx;
+    var dragOk = false;
+    var lens, obj, img;
+    var canvas;
+    var u = 100,
+      v = 100,
+      f = 50,
+      m = -1;
+    var offx, offy;
+
+
+    function Init() {
+
+      canvas = document.getElementById('mycanvas1');
+
+      if (canvas.getContext) {
+        ctx = canvas.getContext('2d');
+        document.onmousemove = moveDrag;
+        document.onmousedown = down;
+        document.onmouseup = up;
+
+        lens = getLens();
+        obj = getObject();
+        img = getImage();
+        var pos = findPos(canvas);
+        offx = parseInt(pos[0]);
+        offy = parseInt(pos[1]);
+        findSolutionWhenDragged();
+        draw();
+      } else {
+        alert('You need Safari or Firefox 1.5+ to see this.');
+      }
+
+
+    }
+
+    function findPos(obj) {
+      var curleft = curtop = 0;
+      if (obj.offsetParent) {
+        curleft = obj.offsetLeft
+        curtop = obj.offsetTop
+        while (obj = obj.offsetParent) {
+          curleft += obj.offsetLeft
+          curtop += obj.offsetTop
+        }
+      }
+      return [curleft, curtop];
+    }
+    ///////////-----------------------------------------------------------------
+    function draw() {
+      clearDisplay();
+      lens.draw();
+      img.draw();
+      obj.draw();
+      drawLines();
+    }
+
+    function clearDisplay() {
+      ctx.fillStyle = 'rgb(240,240,255)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
+    //------------------------------------------------------------------------
+    function drawLines() {
+      //document.getElementById("console").textContent = 'drawing';
+      ctx.strokeStyle = 'blue';
+
+      ctx.beginPath();
+      ctx.moveTo(obj.x, obj.y - obj.h);
+      ctx.lineTo(lens.x, lens.y - lens.h / 2);
+      ctx.lineTo(img.x, img.y - img.h);
+      ctx.stroke();
+
+
+      ctx.beginPath();
+      ctx.moveTo(obj.x, obj.y - obj.h);
+      ctx.lineTo(lens.x, lens.y);
+      ctx.lineTo(img.x, img.y - img.h);
+      ctx.stroke();
+
+    }
+    //-------------------------------------------------------------------------------
+    function findSolutionWhenDragged() {
+      u = lens.x - obj.x;
+      //document.getElementById("console").textContent=u;
+
+      v = u * f / (u - f);
+      m = -v / u;
+      updateCoordinates();
+      document.getElementById("utext").value = u.toFixed(2);
+      document.getElementById("vtext").value = v.toFixed(2);
+      document.getElementById("ftext").value = f.toFixed(2);
+      document.getElementById("mtext").value = m.toFixed(2);
+
+    }
+
+    function updateCoordinates() {
+      lens.f = f;
+      if (f < 0) {
+        lens.type = 'convexMirror';
+      } else {
+        lens.type = 'concaveMirror';
+      }
+      obj.x = lens.x - u;
+      img.x = lens.x - v;
+      img.h = obj.h * m;
+      img.w = obj.w * Math.abs(m);
+    }
+    //-----------------------------------------------------------------------------
+    /*lens type updated from input radio select buttons*/
+    function lensTypeUpdate(lensType) {
+      if (document.getElementById("convexLCB").checked == true) {
+        f = Math.abs(f);
+      } else {
+        f = -Math.abs(f);
+      }
+      lens.type = lensType;
+      findSolutionWhenDragged();
+      updateCoordinates();
+      draw();
+    }
+    //---------------------------------------------------------------------------
+    //---------------------------------------------------------------------------------------
+    var numberOfInputs = 0,
+      uflag = false,
+      vflag = false,
+      fflag = false,
+      mflag = false;
+    //finds the solution when the inputs are given at the text boxes
+    function findSolTx(te) {
+      numberOfInputs++;
+      //document.getElementById("console").textContent = numberOfInputs;
+      document.getElementById(te + 'button').disabled = true;
+      document.getElementById(te + 'text').disabled = true;
+      document.getElementById(te + 'text').style.background = 'rgb(200,255,200)';
+      if (te == 'u') {
+        uflag = true;
+      } else if (te == 'v') {
+        vflag = true;
+      } else if (te == 'f') {
+        fflag = true;
+      } else if (te == 'm') {
+        mflag = true;
+      }
+
+
+
+      if (numberOfInputs == 2) {
+        //alert('calculating');
+
+        u = parseFloat(document.getElementById('utext').value);
+        v = parseFloat(document.getElementById('vtext').value);
+        f = parseFloat(document.getElementById('ftext').value);
+        m = parseFloat(document.getElementById('mtext').value);
+
+        // u v f m
+        if (uflag && vflag) {
+          //alert('uv');
+          f = u * v / (u + v);
+          m = -v / u;
+          document.getElementById('ftext').style.background = 'rgb(255,255,0)';
+          document.getElementById('mtext').style.background = 'rgb(255,255,0)';
+        } else if (uflag && fflag) {
+          //alert('uf');
+          v = u * f / (u - f);
+          m = -v / u;
+          document.getElementById('vtext').style.background = 'rgb(255,255,0)';
+          document.getElementById('mtext').style.background = 'rgb(255,255,0)';
+        } else if (uflag && mflag) {
+          //alert('um');
+          v = -m * u;
+          f = u * v / (u + v);
+          document.getElementById('vtext').style.background = 'rgb(255,255,0)';
+          document.getElementById('ftext').style.background = 'rgb(255,255,0)';
+        } else if (vflag && fflag) {
+          //alert('vf');
+          u = v * f / (v - f);
+          m = -v / u;
+          document.getElementById('utext').style.background = 'rgb(255,255,0)';
+          document.getElementById('mtext').style.background = 'rgb(255,255,0)';
+        } else if (vflag && mflag) {
+          //alert('vm');
+          u = -v / m;
+          f = u * v / (u + v);
+          document.getElementById('utext').style.background = 'rgb(255,255,0)';
+          document.getElementById('ftext').style.background = 'rgb(255,255,0)';
+        } else if (fflag && mflag) {
+          //alert('fm');
+          u = f * (1 - 1 / m);
+          v = -m * u;
+          document.getElementById('utext').style.background = 'rgb(255,255,0)';
+          document.getElementById('vtext').style.background = 'rgb(255,255,0)';
+        }
+        document.getElementById('ubutton').disabled = true;
+        document.getElementById('vbutton').disabled = true;
+        document.getElementById('fbutton').disabled = true;
+        document.getElementById('mbutton').disabled = true;
+        document.getElementById('utext').disabled = true;
+        document.getElementById('vtext').disabled = true;
+        document.getElementById('ftext').disabled = true;
+        document.getElementById('mtext').disabled = true;
+
+
+
+
+        document.getElementById("utext").value = u.toFixed(2);
+        document.getElementById("vtext").value = v.toFixed(2);
+        document.getElementById("ftext").value = f.toFixed(2);
+        document.getElementById("mtext").value = m.toFixed(2);
+
+
+        //setType();
+      }
+      updateCoordinates();
+      draw();
+    }
+
+    function resetSolTx() {
+      u = 100, v = 100, f = 50, m = -1;
+      document.getElementById("utext").value = u.toFixed(2);
+      document.getElementById("vtext").value = v.toFixed(2);
+      document.getElementById("ftext").value = f.toFixed(2);
+      document.getElementById("mtext").value = m.toFixed(2);
+      document.getElementById('utext').style.background = 'rgb(255,255,255)';
+      document.getElementById('vtext').style.background = 'rgb(255,255,255)';
+      document.getElementById('ftext').style.background = 'rgb(255,255,255)';
+      document.getElementById('mtext').style.background = 'rgb(255,255,255)';
+      document.getElementById('ubutton').disabled = false;
+      document.getElementById('vbutton').disabled = false;
+      document.getElementById('fbutton').disabled = false;
+      document.getElementById('mbutton').disabled = false;
+      document.getElementById('utext').disabled = false;
+      document.getElementById('vtext').disabled = false;
+      document.getElementById('ftext').disabled = false;
+      document.getElementById('mtext').disabled = false;
+
+      numberOfInputs = 0;
+      uflag = false;
+      vflag = false;
+      fflag = false;
+      mflag = false;
+      updateCoordinates();
+      draw();
+    }
+    //---------------------------------------------------------------------------
+    function moveDrag(e) {
+      if (isInsideCanvas(e.pageX - offx, e.pageY - offy)) {
+        if (dragOk) {
+          //document.getElementById("console").textContent='drag';	
+          if (lens.active) {
+            lens.x = e.pageX - offx;
+            findSolutionWhenDragged();
+          } else if (obj.active) {
+            obj.x = e.pageX - offx;
+            findSolutionWhenDragged();
+          } else if (img.active) {
+            //img.x=e.pageX;
+          } else if (lens.focusActive) {
+            f = e.pageX - offx - lens.x;
+            if (f >= 0) {
+              document.getElementById("convexLCB").checked = 'true';
+            } else {
+              document.getElementById("concaveLCB").checked = 'true';
+            }
+            findSolutionWhenDragged();
+          }
+          updateCoordinates();
+          draw();
+
+        } else {
+          //document.getElementById("console").textContent = 'move';
+          showCursorOnObject(e);
+        }
+      }
+    }
+
+    function down(e) {
+      if (isInsideCanvas(e.pageX - offx, e.pageY - offy)) {
+        dragOk = true;
+        ///document.getElementById("console").textContent='down';
+        if (lens.isInside(e.pageX - offx, e.pageY - offy)) {
+          lens.active = true;
+        } else if (obj.isInside(e.pageX - offx, e.pageY - offy)) {
+          obj.active = true;
+        } else if (img.isInside(e.pageX - offx, e.pageY - offy)) {
+          img.active = true;
+        } else if (lens.isOnFocus(e.pageX - offx, e.pageY - offy)) {
+          lens.focusActive = true;
+        }
+      }
+    }
+
+    function up(e) {
+      if (isInsideCanvas(e.pageX - offx, e.pageY - offy)) {
+        dragOk = false;
+        //document.getElementById("console").textContent='up';
+        lens.active = false;
+        obj.active = false;
+        img.active = false;
+        lens.focusActive = false;
+      }
+    }
+
+    function isInsideCanvas(mx, my) {
+      if ((0 <= mx && mx <= canvas.width) && (0 <= my && my <= canvas.height)) {
+        return true;
+      } else
+        return true;
+
+    }
+
+    function showCursorOnObject(e) {
+      if (lens.isInside(e.pageX - offx, e.pageY - offy)) {
+        document.getElementById("canvasDiv1").style.cursor = 'move';
+      } else if (obj.isInside(e.pageX - offx, e.pageY - offy)) {
+        document.getElementById("canvasDiv1").style.cursor = 'move';
+      } else if (img.isInside(e.pageX - offx, e.pageY - offy)) {
+        //document.getElementById("canvasDiv1").style.cursor = 'move';	
+      } else if (lens.isOnFocus(e.pageX - offx, e.pageY - offy)) {
+        document.getElementById("canvasDiv1").style.cursor = 'w-resize';
+      } else {
+        document.getElementById("canvasDiv1").style.cursor = 'default';
+      }
+    }
+    ///----------------------------------------------------------------------------
+    function getLens() {
+      lens = {
+        x: canvas.width / 2,
+        y: canvas.height / 2,
+        h: 100,
+        w: 20,
+        f: 50,
+        type: 'concaveMirror', //convexLens, concaveLens, convexMirror, concaveMirror
+        active: false,
+        focusActive: false,
+        isInside: function(mx, my) {
+          if ((this.x - this.w / 2 < mx && mx <= this.x + this.w / 2) &&
+            (this.y - this.h / 2 < my && my <= this.y + this.h / 2)) {
+            return true;
+          } else return false;
+        },
+        isOnFocus: function(mx, my) {
+          if ((this.x + this.f - 5 < mx && mx <= this.x + this.f + 5) &&
+            (this.y - 5 < my && my <= this.y + 5)) {
+            return true;
+          } else {
+            return false;
+          }
+        },
+        draw: function() {
+          //ctx.bezierCurveTo(cp1x,cp1y,cp2x,cp2y,x,y);
+          var sx = 0,
+            sy = 0,
+            lx = 0,
+            ly = 0,
+            putLeftAarc = false,
+            putRightArc = false;
+
+          if (this.type == 'convexLens') {
+            lx = 0;
+            ly = 0;
+            sx = 0;
+            sy = 0;
+            putLeftAarc = true;
+            putRightArc = true;
+          } else if (this.type == 'concaveLens') {
+            lx = 10;
+            ly = 0;
+            sx = -10;
+            sy = 0;
+            putLeftAarc = true;
+            putRightArc = true;
+          } else if (this.type == 'convexMirror') {
+            lx = 0;
+            ly = 0;
+            sx = 0;
+            sy = 0;
+            putLeftAarc = true;
+          } else if (this.type == 'concaveMirror') {
+            lx = 0;
+            ly = 0;
+            sx = 0;
+            sy = 0;
+            putRightArc = true;
+          }
+          if (putLeftAarc) {
+            //left arc
+            ctx.beginPath();
+            ctx.moveTo(lx + this.x, ly + this.y - this.h / 2 - 10);
+            ctx.bezierCurveTo(lx + this.x - this.w / 2, ly + this.y - this.h / 4, lx + this.x - this.w / 2, ly + this.y + this.h / 4,
+              lx + this.x, ly + this.y + this.h / 2 + 10);
+            ctx.strokeStyle = 'black';
+            ctx.stroke();
+          }
+
+          if (putRightArc) {
+            //right arc
+            ctx.beginPath();
+            ctx.moveTo(sx + this.x, sy + this.y - this.h / 2 - 10);
+            ctx.bezierCurveTo(sx + this.x + this.w / 2, sy + this.y - this.h / 4, sx + this.x + this.w / 2, sy + this.y + this.h / 4,
+              sx + this.x, sy + this.y + this.h / 2 + 10);
+            ctx.strokeStyle = 'black';
+            ctx.stroke();
+          }
+
+
+          //focal points
+          ctx.beginPath();
+          ctx.arc(this.x, this.y, 2, 0, Math.PI * 2, true);
+          ctx.closePath();
+          ctx.stroke();
+
+
+          ctx.beginPath();
+          ctx.arc(this.x - this.f, this.y, 2, 0, Math.PI * 2, true);
+          ctx.closePath();
+          ctx.stroke();
+
+
+          ctx.beginPath();
+          ctx.arc(this.x - 2 * this.f, this.y, 2, 0, Math.PI * 2, true);
+          ctx.closePath();
+          ctx.stroke();
+
+          // movable focal point
+          ctx.beginPath();
+          ctx.arc(this.x + this.f, this.y, 5, 0, Math.PI * 2, true);
+          ctx.fillStyle = 'red';
+          ctx.fill();
+          ctx.closePath();
+          ctx.stroke();
+
+          ctx.beginPath();
+          ctx.arc(this.x + 2 * this.f, this.y, 2, 0, Math.PI * 2, true);
+          ctx.closePath();
+          ctx.stroke();
+
+        }
+      }
+      return lens;
+    }
+
+    function getObject() {
+      Obj = {
+        x: canvas.width / 2 - 100,
+        y: canvas.height / 2,
+        h: 50,
+        w: 10,
+        active: false,
+        isInside: function(mx, my) {
+          if ((this.x - this.w / 2 < mx && mx <= this.x + this.w / 2) &&
+            (this.y - this.h < my && my <= this.y)) {
+            return true;
+          } else return false;
+        },
+        draw: function() {
+          ctx.fillStyle = 'green';
+          ctx.fillRect(this.x - this.w / 2, this.y - this.h, this.w, this.h);
+          ctx.stroke();
+        }
+      }
+      return Obj;
+    }
+
+    function getImage() {
+      img = {
+        x: canvas.width / 2 + 100,
+        y: canvas.height / 2,
+        h: 50,
+        w: 10,
+        active: false,
+        isInside: function(mx, my) {
+          if ((this.x - this.w / 2 < mx && mx <= this.x + this.w / 2) &&
+            (this.y < my && my <= this.y + this.h)) {
+            return true;
+          } else return false;
+        },
+        draw: function() {
+          ctx.fillStyle = 'rgba(0,255,0,0.5)';
+          ctx.fillRect(this.x - this.w / 2, this.y - this.h, this.w, this.h);
+          ctx.strokeStyle = 'balck';
+          ctx.stroke();
+        }
+      }
+      return img;
+    }
+    ///----------------------------------------------------------------------------
+  </script>
+</body>
+
+</html>

@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html ng-app="myapp">
+<head>
+<script src="js/angular.min.js"></script>   
+<style>
+.player{height: 30px;vertical-align: top;background: #424242;color: #A2A2A2;cursor: pointer;}
+li{color:#A5A5A5;cursor: pointer;}
+li.active{color:#000;}
+</style>
+<script>
+
+</script>
+</head>
+<body ng-controller="MController">
+<input type="file" ng-model="multifile" multiple="" onchange="angular.element(this).scope().fileNameChanged(this);"/><hr>
+<input type="button" value="<<" ng-model="prev" class="player" ng-click="changeSong(-1)" />
+<audio id="audioplayer" name="audioplayer" autoplay="" src="" controls=""></audio>
+<input type="button" value=">>" ng-model="next" class="player" ng-click="changeSong(1)" />    
+<hr>
+currentSong:{{ci}}<br>
+<ul id="playlist">
+	<li ng-repeat="f in files" ng-class="{'active':$index==ci}">{{f.name}}</li>
+</ul>
+<script>
+angular.module('myapp',[])
+.controller('MController',function($scope){
+	$scope.ci=0;
+	$scope.files=[];	
+	$scope.fileNameChanged=function(el){
+		$scope.files = el.files;		
+		$scope.$apply();
+		play();
+	}
+	$scope.changeSong=function(cmd){
+		$scope.ci=($scope.ci+$scope.files.length+cmd)%$scope.files.length;
+		play();
+	}	
+	function play(){				
+		readFileAsDataURL($scope.files[$scope.ci],function(result){			
+			document.getElementById('audioplayer').src=result;
+		});	
+	}
+	function readFileAsDataURL(file,fn){		
+		var reader = new FileReader();
+		reader.onload = function(evt) {      
+			fn(evt.target.result);        
+		};
+		if(file) reader.readAsDataURL(file);
+	}
+})
+</script>
+</body>
+</html>

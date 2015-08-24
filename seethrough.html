@@ -1,0 +1,22 @@
+<style>
+.lens{height:200px;width:200px;background-image:url('images/flowers.jpg');background-position: 50px 50px;border:1px solid ;position: absolute;top:0px;left:0px;border-radius:125px;background-repeat: no-repeat;}
+</style>
+<body style="background:grey;" >
+<div style="position:absolute;">
+<img src="images/flowers.jpg" id="container" style="visibility: hidden;"><div class="lens"></div>
+</div>
+<script src="js/jquery.min.js"></script>
+<script src="js/jquery-ui.js"></script>
+<script>
+$(function(){
+	$('.lens').draggable({
+		containment:'#container',		
+		drag:function(){
+			e=$(this);position=-e.position().left+'px '+-e.position().top+'px';
+			e.css('background-position',position);
+		}
+	});
+});
+</script>
+</body>
+

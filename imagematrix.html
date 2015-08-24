@@ -1,0 +1,124 @@
+<!DOCTYPE HTML>
+<html>
+<style>
+input{ margin: -2px;}
+.compress{
+margin-left: 5px;
+}
+</style>
+<head>
+<script src="https://code.jquery.com/jquery-2.1.3.min.js"></script>
+</head>
+<body>
+<div>
+</div>
+Number: <input type="radio" name="selctedStyle" value="number" checked>  
+Radio: <input type="radio" name="selctedStyle" value="radio">  
+Checkbox: <input type="radio" name="selctedStyle" value="checkbox">  
+
+<input type="range" id="threshold" min="0" max="255" value="100">
+<input type="file" id="fileInput" accept="image/*" >
+<input type="button" value="render" onclick="render()">
+<canvas id="canvas" width="90" height="80"></canvas>
+<div id="output" style="width:5500px"> </div>
+
+<script>
+// Code goes here
+
+var imageData = null;
+var y = null;
+var threshold = 100;
+var selctedStyle = 'number'; //default style;
+$('input[name=selctedStyle]').click(function() {
+  selctedStyle = $(this).val();
+});
+$('#threshold').change(function() {
+  threshold = parseInt($(this).val());
+});
+
+var $output = $("#output");
+
+//create a new image draw it on canvas
+$('#fileInput').change(function(evt) {
+  var tgt = evt.target || window.event.srcElement,
+    files = tgt.files;
+  // FileReader support
+  if (FileReader && files && files.length) {
+    var fr = new FileReader();
+    fr.onload = function() {
+      var img = new Image();
+      img.src = fr.result;
+      loadCanvas(img);
+    };
+    fr.readAsDataURL(files[0]);
+  }
+});
+
+
+
+//get image data from the canvas
+function loadCanvas(img) {
+  console.log('loading canvas.....');
+  var canvas = $('#canvas')[0];
+  if (canvas.getContext) {
+    var ctx = canvas.getContext('2d');
+    ctx.drawImage(img, 0, 0,canvas.width, canvas.height );
+    imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  }
+}
+
+function render() {
+  if (imageData !== null) {
+    reset();
+    drawRows();
+  }
+
+}
+
+function reset() {
+  $(output).empty();
+  y = 0;
+}
+
+
+
+function drawRows() {
+  if (y < imageData.height) {
+    //console.log(y);                              
+    for (x = 0; x < imageData.width; x++) {
+      var k = 4 * (y * imageData.width + x);
+      r = imageData.data[k];
+      g = imageData.data[k + 1];
+      b = imageData.data[k + 2];
+      pixelDrawer[selctedStyle](r, g, b);
+    }
+    y++;
+    $output.append('<br>');
+    window.setTimeout(drawRows, 10);
+  }
+}
+
+
+pixelDrawer = {
+  number: function(r, g, b) {
+
+    $output.append('<span style="color:rgb(' + r + ',' + g + ',' + b + ');">' + (r + 255) + '</span>');
+  },
+  checkbox: function(r, g, b) {
+    if ((r + g + b) / 3 < threshold) {
+      $output.append('<input type="checkbox"  class="compress" checked>');
+    } else {
+      $output.append('<input type="checkbox"  class="compress">');
+    }
+  },
+  radio: function(r, g, b) {
+    if ((r + g + b) / 3 < threshold) {
+      $output.append('<input type="radio"  class="compress" checked>');
+    } else {
+      $output.append('<input type="radio"  class="compress">');
+    }
+  }
+};</script>
+</body>
+</html>
+</html>

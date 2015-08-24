@@ -1,0 +1,189 @@
+<!doctype html>
+<html ng-app="loanApp">
+  <head>
+    <title>Loan Calculator</title>
+    <link href="css/bootstrap.min.css" rel="stylesheet">
+    <script src="js/jquery.min.js"></script>    
+    <script src="js/angular.min.js"></script>
+	<script src="js/ng-pagination.js"></script>
+    <script src="js/highcharts.js"></script>
+  </head>
+ 
+ <body ng-controller="MainController"> 
+<header class="navbar navbar-inverse"  >
+  <div class="container">
+    <div class="navbar-header">    
+      <a href="#" class="navbar-brand">Loan Calculator</a>
+    </div>
+    <nav class="collapse navbar-collapse bs-navbar-collapse">
+      <ul class="nav navbar-nav">
+        <li>
+          <a href="#">EMI</a>
+        </li>        
+      </ul>
+      <ul class="nav navbar-nav navbar-right">     
+        <li><a href="#">Other</a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<div class="container">	
+			<table class="table bordered">
+				<tr>
+					<td>LoanAmount</td>
+					<td><input type="range" min="100000" max="3000000" step="10000" ng-model="P"></td>
+					<td><input type="text" ng-model="P"></td>
+				</tr>
+				<tr>
+					<td>Intrest</td>
+					<td><input type="range" min="8" max="20" step="0.05" ng-model="R"></td>
+					<td><input type="text" ng-model="R"></td>
+				</tr>
+				<tr>
+					<td>Tenure (Months) </td>
+					<td><input type="range" min="3" max="60" step="3" ng-model="n"></td>
+					<td><input type="text" ng-model="n"></td>
+				</tr>
+				
+				<tr>
+					
+					<td>EMI</td>
+					<td> {{emi|number:2}}</td>
+				</tr>
+				
+				<tr>
+					<td><button class="btn btn-primary" ng-click="calculate();">Submit</button></td>
+					
+				</tr>
+			</table>
+			 
+			 
+			 <div role="tabpanel">
+
+ 
+
+  <!-- Tab panes -->
+	<div class="row">		
+		<div class="col-md-8">		
+			<table class="table">
+				<thead>
+					<tr>
+						<th>Installment</th>
+						<th>Beginning Balance</th>
+						<th>Intrest</th>
+						<th>Ending Balance</th>
+						<th>Total Paid</th>
+						<th>Intrest Paid</th>
+					</tr>
+				</thead>
+				<tbody>
+					<tr ng-repeat="r in installments.slice(start,end) ">
+						<td>{{r.index|number}}</td>
+						<td>{{r.beginningBalance|number:0}}</td>
+						<td>{{r.intrest|number:0}}</td>
+						<td>{{r.endingBalance|number:0}}</td>
+						<td>{{r.totalPaid|number:0}}</td>
+						<td>{{r.intrestPaid|number:0}}</td>
+					</tr>
+				</tbody>
+			</table>
+			
+			<pagination numRecords="{{n}}" itemsPerPage="25" currentPage="1" maxPages="5" ></pagination>	
+		</div>
+		<div class="col-md-4">
+			<div id="container" style="min-width: 310px; height: 400px; margin: 0 auto"></div>
+		</div>
+	</div>
+</div>	
+</div>  
+  <script>
+ (function(){
+ 
+ 
+ var options = {
+    chart: {
+        renderTo: 'container',
+        defaultSeriesType: 'line'
+    },
+	plotOptions: {
+            series: {
+                marker: {
+                    enabled: false
+                }
+            }
+        },
+    series: []
+};
+ 
+ 
+ 
+angular.module('loanApp',['ng-pagination'])
+.controller('MainController', ['$scope', function(s) {
+  s.P = 300000; s.R=15.5; s.n=48;  
+  s.r = s.R/12/100;  
+  s.emi=s.P*s.r*Math.pow(1+s.r,s.n)/(Math.pow(1+s.r,s.n)-1);  
+ 
+
+	
+	
+	s.$watch('P+R+n',function(){
+		 	s.r = s.R/12/100;  
+		  	s.emi=s.P*s.r*Math.pow(1+s.r,s.n)/(Math.pow(1+s.r,s.n)-1);		
+  		  	
+  		
+	});
+	
+	s.calculate = function(){
+			console.log(s.r)
+		  	var beginningBalance = s.P*1;
+  		  	var totalPaid=0;  		  	
+  		  	var intrestPaid=0;
+  		  	s.installments=[];
+  		  	//console.log({beginningBalance:s.P*1,  emi:s.emi})
+	  	for(var i=0;i<s.n;i++){	  		
+	  		var data={};	  		
+  			var intrest =   beginningBalance*s.r;
+  			var endingBalance = beginningBalance+intrest-s.emi;  	
+			
+  			totalPaid+=s.emi;
+  			intrestPaid+=intrest;
+  			data.beginningBalance = beginningBalance;
+  			data.endingBalance =endingBalance;
+  			data.intrest = intrest;
+  			data.index = i+1;
+  			data.totalPaid=totalPaid;
+  			data.intrestPaid=intrestPaid;
+  			s.installments.push(data);
+  			beginningBalance = endingBalance;
+  			
+  			
+  			
+  		}
+  		s_endingBalance=[];
+  		s_intrestPaid=[];
+  		s_totalPaid=[];
+  		$.each(s.installments,function(i, r){
+  			s_endingBalance.push(r.endingBalance);
+  			s_intrestPaid.push(r.intrestPaid);
+  			s_totalPaid.push(r.totalPaid);
+  			
+  		});
+  		options.series = [
+  			{name: 'endingBalance', data: s_endingBalance},
+  			{name: 'intrestPaid', data: s_intrestPaid},
+  			{name: 'totalPaid', data: s_totalPaid},
+  			
+  			
+  		]
+  		var chart = new Highcharts.Chart(options);  
+	}
+  
+}]);	
+ 
+ }());
+ 
+ 
+  </script>
+  </body>
+</html>

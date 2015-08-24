@@ -1,0 +1,428 @@
+
+<div>
+<canvas id="outputCanvas" width="640" height="420" style="background:black;"></canvas>
+</div>
+
+<div>
+<canvas id="inputCanvas" width="320" height="240"  style="display:none"></canvas>
+<video id="inputVideo" autoplay loop></video>
+</div>
+
+
+
+
+<div>
+Ref: head tracking Source at
+<a href="http://auduno.tumblr.com/post/25125149521/head-tracking-with-webrtc">head tracking with webrtc</a>
+</div>
+<script src="https://rawgithub.com/auduno/headtrackr/master/headtrackr.js"></script>
+<script>
+
+var ctx, canvas,cw,ch,cx,cy;
+window.onload=function(){
+   canvas = document.getElementById('outputCanvas');
+    ctx = canvas.getContext('2d');
+	cx=0;cy=0;cw=canvas.width;ch=canvas.height;
+   
+   
+	ctx.fillStyle='grey';
+	ctx.font = "50px sans-serif";
+	ctx.fillText('Press Enter to Start',100,ch/2);	
+    
+    
+    initheadtracker();
+}
+
+function initheadtracker(){
+  var videoInput = document.getElementById('inputVideo');
+  var canvasInput = document.getElementById('inputCanvas');
+
+  var htracker = new headtrackr.Tracker();
+  htracker.init(videoInput, canvasInput);
+  htracker.start();
+
+}
+
+document.addEventListener('facetrackingEvent',function(e){
+    /*
+    ctx.fillStyle="black";
+    ctx.fillRect(0, 0, 320, 240);
+    ctx.fillStyle="#FF0000";
+    ctx.fillRect(e.x,e.y,50,50);
+    */
+    cursor.x = 2*(320-e.x);
+    cursor.y = 2*e.y;
+
+});
+
+document.addEventListener('headtrackingEvent',  function(e){
+    /*
+    ctx.font= '12px';    
+    ctx.strokeStyle='yellow';
+    ctx.strokeText('x: '+e.x,10,10);  
+    ctx.strokeText('y: '+e.y,10,25);
+    ctx.strokeText('z: '+e.z,10,40);
+    */
+});
+
+
+
+
+//game script-------------------------
+console.log('fallbox')
+
+document.onclick = function(e){
+	cursor.x=e.clientX;
+	cursor.y=e.clientY;
+	
+
+};
+function checkGameRules(){
+	dashboard.showLives(ctx); dashboard.showScore(ctx);
+	
+	//check if the box reached the top
+	if(box.y<0){		
+		dashboard.lives--;
+		if(dashboard.lives==0){				
+			dashboard.showGameOver(ctx);
+			engine.stop();	
+		}else{
+			engine.pause();		
+			window.setTimeout(function(){ 
+			//resetting box to new position
+			box.y=ch/2;
+			//resetting the slab to new position
+			slab.y=ch;	 slab.x=getRand(0+slab.width/2,cw-slab.width/2);
+			//
+			engine.play();
+			},2000);
+		}
+		
+	}else if(slab.y<0){
+		dashboard.score++;
+		
+		//resetting the slab to new position
+		slab.y=ch;	 slab.x=getRand(0+slab.width/2,cw-slab.width/2);
+			
+		
+			
+			
+	}	
+
+}
+
+dashboard={
+lives:4,score:0,gameOver:false,
+showLives:function(ctx){
+	for(var i=0;i<this.lives;i++){
+		drawSphere(ctx,i*20+15,15,10,'red');	
+	}
+},
+showScore:function(ctx){
+	ctx.fillStyle='white';
+	ctx.font = "20px sans-serif";
+	ctx.fillText('Score: '+this.score,500,25);
+},
+
+showGameOver:function(ctx){
+	ctx.fillStyle='white';
+	ctx.font = "50px sans-serif";
+	ctx.fillText('GAME OVER',150,ch/2);	
+},
+test:null
+}
+
+
+function run(){
+
+	var lgred=ctx.createLinearGradient(-200,-200,-200,ch+5);
+	lgred.addColorStop(0,"black");
+	lgred.addColorStop(0.1,"blue");
+	lgred.addColorStop(1,"white");
+	
+	ctx.fillStyle=lgred;
+	//ctx.drawImage(bgimg,0,0,cw,ch);
+	ctx.fillRect(0,0,cw,ch);
+	
+	
+
+	slab.update();
+	box.checkPad(slab.x,slab.y,slab.width, slab.height);
+	slab.draw(ctx, cw);
+		
+		
+
+
+	//dragging the box along the cursor
+	var dist=getDist(box.x,box.y,cursor.x,cursor.y);
+	box.vx=box.vx+(cursor.x-box.x)*dist/10000;
+	box.vy=box.vy+(cursor.y-box.y)*dist/10000;
+	//
+
+
+
+	box.update();
+		
+		drawLine(ctx,box.x,box.y,cursor.x,cursor.y);	
+		box.draw(ctx);		
+		cursor.draw(ctx);
+	box.checkBoundary(cw,ch);
+	
+	
+	checkGameRules();
+
+}
+
+
+document.addEventListener('runUpdateEvent',function(e){
+	var target=e.data;		
+	if(target.counter>5000){
+		target.stop();	console.log('engine stopped');		
+	}
+	
+	run();
+	
+});
+
+cursor={
+x:10,y:10,r:20,
+strokeStyle:'white',
+draw:function(ctx){
+	drawSphere(ctx,this.x,this.y,this.r,'red');	
+	
+	ctx.strokeStyle=this.strokeStyle;	
+	ctx.strokeRect(this.x-this.r,this.y-this.r,2*this.r,2*this.r);
+	ctx.lineWidth=2;
+	ctx.strokeStyle='white';
+	ctx.beginPath();	ctx.arc(this.x-7,this.y-4,  3,0,2*Math.PI); ctx.closePath();	ctx.stroke();
+	ctx.beginPath();	ctx.arc(this.x+7,this.y-4, 3,0,2*Math.PI); ctx.closePath();	ctx.stroke();
+	ctx.strokeStyle='#990000';
+	ctx.beginPath();	ctx.arc(this.x,this.y+4, 10,45*Math.PI/180,135*Math.PI/180); ctx.closePath();	ctx.stroke();
+	drawSphere(ctx,this.x,this.y+5,8,'black');		
+	
+}
+
+}
+
+//getBox start----------------------------------------------------------------------
+function getBox(){
+return{
+x:100,y:100,vx:20,vy:0,a:10,dt:0.2,w:50,h:50,r:20,
+fillStyle:'white',
+update:function(){
+	this.x+=this.vx*this.dt;
+	this.vy+=this.a*this.dt;
+	this.y+=this.vy*this.dt;	
+},
+checkBoundary:function(width,height){
+	var e=0.5;
+	if(this.y+this.r>=height){
+			this.vy=-e*this.vy;
+			this.y=height-this.r-1;
+	}
+	if(this.x+this.r>width){
+			this.vx=-e*this.vx;
+			this.x=width-this.r-1;			
+	}
+	if(this.x-this.r<0){
+			this.vx=-e*this.vx;
+			this.x=0+this.r+1;
+	}
+
+},
+checkPad:function(pX,pY,pWidth,pHeight){
+	var  e=0.2;
+	var x1=pX-pWidth/2;var x2=pX+pWidth/2;
+	var y1=pY-pHeight/2;var y2=pY+pHeight/2;
+	
+	
+	
+	if(x1<this.x && this.x<x2){			
+	}else{			
+		if(this.y+this.r>=y1 && this.y+this.r<y2){
+			this.vy=-e*this.vy;
+			this.y=y1-this.r-1;
+		}
+		else if(this.y-this.r<=y2 && this.y-this.r>y1){
+			this.vy=-e*this.vy;
+			this.y=y2+this.r+1;
+		}
+	}
+
+	//in the step
+		if(y1<this.y && this.y<y2){
+			///in the hole
+			if(this.x+this.r>=x2){
+				this.vx=-e*this.vx;
+				this.x=x2-this.r-1;
+			}
+			if(this.x-this.r<=x1){
+				this.vx=-e*this.vx;
+				this.x=x1+this.r+1;
+			}
+			
+		}
+		////------
+
+},
+draw:function(ctx){		
+	drawSphere(ctx,this.x,this.y,this.r,'red');	
+},
+
+temp:null
+}
+}
+//getBox start----------------------------------------------------------------------
+
+box = getBox();
+
+
+
+
+//getSlab start----------------------------------------------------------------------
+function getSlab(){
+return{
+x:150,y:400,width:100,height:40,vy:-20,dt:0.2,
+alive:false,fillStyle:'yellow',
+update:function(){
+	this.y+=this.vy*this.dt;
+},
+checkBoundary:function(height){
+	if(this.y<=0){
+			this.y=height;
+	}
+},
+draw:function(ctx,width){
+	ctx.fillStyle=this.fillStyle;
+	//ctx.fillRect(0,this.y-this.height/2,width,this.height);	
+	
+	var x=this.x; var y = this.y; var h=this.height*1.2;var w=this.width;	//heigh and width  and of hole	
+	
+	var lgred=ctx.createLinearGradient(0,y-h/2,0,y+h/2);
+	lgred.addColorStop(0,"black");
+	lgred.addColorStop(0.2,"blue");
+	lgred.addColorStop(1,"white");	
+	
+	ctx.fillStyle=lgred;
+	
+	ctx.fillRect(0,y-h/2,x-w/2,h);
+	ctx.fillRect(x+w/2,y-h/2,cw-(x+w/2),h);
+	
+
+	
+},
+temp:null
+}
+}
+//getSlab end----------------------------------------------------------------------
+slab=getSlab();
+//engine start----------------------------------------------------------------------
+engine={
+freq:20,//min 1 max 20
+pid:null,
+isActive:false,
+counter:0,
+
+pause:function(){
+this.isActive=false;
+},
+play:function(){
+this.isActive=true;
+},
+start:function(){
+	if(this.pid==null){
+		var that = this;
+		this.pid=window.setInterval(function(){
+			if(that.isActive){
+				that.counter++;			
+				that.fireEvent('runUpdateEvent',document);
+			}			
+		},this.getT());
+	}
+	this.isActive=true;
+},
+stop:function(){
+clearInterval(this.pid);
+	this.pid=null;
+},
+fireEvent:function(name,target){
+	var evt = document.createEvent("Events") ;
+		evt.data=this;
+  	 evt.initEvent(name, true, true); 
+         target.dispatchEvent(evt);
+},
+getT:function(){
+return 1000/this.freq;
+}
+}
+
+//engine end----------------------------------------------------------------------
+
+
+
+function drawSphere(ctx,x,y,r,color){	
+	var sx0=0; var sy0=r-5;//shift for inner circle
+	var sx1=0; var sy1=r-5;//shift for outer circle
+	var x0=x+sx0; var y0=y+sy0; var r0=1;//inner circle
+	var x1=x+sx1; var y1=y+sy1; var r1=80;//outer circle
+	var grd=ctx.createRadialGradient(x0,y0,r0,x1,y1,r1);
+	grd.addColorStop(0,"white");
+	grd.addColorStop(0.1,color);
+	grd.addColorStop(1,"black");
+	ctx.fillStyle=grd;
+	
+	ctx.beginPath();
+	ctx.arc(x,y,r,0,2*Math.PI);
+	ctx.fill();
+}
+
+function drawLine(ctx,x1,y1,x2,y2){
+		ctx.strokeStyle='white';
+		ctx.beginPath();	
+			ctx.moveTo(x1,y1);
+			ctx.lineTo(x2,y2);	
+		ctx.closePath();	
+		ctx.stroke();	
+}
+function getRand(a,b){
+	return a+(b-a)*Math.random();
+}
+function getDist(x1,y1,x2,y2){
+	return Math.sqrt(Math.pow((x2-x1),2)+Math.pow((y2-y1),2));
+}
+
+
+
+
+
+
+//--------------key board events-----------------------
+
+
+document.onkeydown = checkKey;
+var keys = {space:32,left:37,up:38,right:39,down:40,enter:13,esc:27,ctrl:17,alt:18}
+function checkKey(e) {
+    e = e || window.event;
+	//console.log(e.keyCode);
+	var key=e.keyCode;
+	var move=10;
+	if(key==keys.enter){
+		if(engine.pid==null) engine.start();
+	}else if(key==keys.space){
+		if(engine.isActive) engine.pause(); else engine.play();
+	}else if(key==keys.left){
+		cursor.x-=move;
+	}else if(key==keys.right){
+		cursor.x+=move;
+	}else if(key==keys.up){
+		cursor.y-=move;
+	}else if(key==keys.down){
+		cursor.y+=move;
+	}
+	
+}
+
+window.setTimeout(function(){engine.start();},5000);
+
+
+</script>

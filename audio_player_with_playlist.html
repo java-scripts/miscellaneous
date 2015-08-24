@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <script src="js/jquery.min.js"></script>   
+	<style>
+.player{height: 30px;vertical-align: top;background: #424242;color: #A2A2A2;cursor: pointer;}
+li{color:#A5A5A5;cursor: pointer;}
+li.active{color:#000;}
+	</style>
+  </head>
+
+  <body>
+    <input type="file" id="multifile" multiple="" /><hr>
+    <input type="button" value="<<" id="prev" class="player" />
+	<audio id="audio-player" name="audio-player" autoplay="" src="" controls=""></audio>
+    <input type="button" value=">>" id="next" class="player" />    
+	<hr>
+    <ul id="playlist"></ul>
+<script>
+var files, fileIndex=0, $playlist = $('#playlist'), audioplayer = $('#audio-player')[0];
+$('#multifile').change(function(){
+	files=this.files;	play(0); 
+});
+function showPlaylist(index){
+	$playlist.empty();
+	$.each(files,function(i,file){
+		var cls = index==i?"active":"";
+		$playlist.append('<li class="'+cls+'" onclick="play('+i+')">'+file.name+'</li>');
+	});
+}
+$('#next').click(function(){
+	fileIndex=(fileIndex+1)%files.length;	play(fileIndex);	
+});
+$('#prev').click(function(){
+	fileIndex=(fileIndex-1+files.length)%files.length;	play(fileIndex);	
+});
+function play(index){
+	file = files[index];
+	showPlaylist(index);
+	readFileAsDataURL(file,function(result){
+		audioplayer.src=result;
+	});	
+}
+//util method
+function readFileAsDataURL(file,fn){
+	var reader = new FileReader();
+    reader.onload = function(evt) {      
+		fn(evt.target.result);        
+    };
+    reader.readAsDataURL(file);
+}
+
+
+    </script>
+  </body>
+
+</html>

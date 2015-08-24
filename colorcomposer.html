@@ -1,0 +1,78 @@
+<html ng-app="myapp">
+
+<style>
+div{
+	float: left;
+    margin: 12px 2px;
+    padding: 10px;
+    box-shadow: 5px 5px 5px;
+}
+input[type=text]{
+	width:30px;
+}
+</style>
+<body ng-controller="MainController">
+
+	<div>	
+		<input type="range" min="0" max="255" ng-model="r" ng-change="setHSV()"> R:<input type="text" ng-model="r" ng-change="setHSV()"><br>
+		<input type="range" min="0" max="255" ng-model="g" ng-change="setHSV()"> G:<input type="text" ng-model="g" ng-change="setHSV()"><br>
+		<input type="range" min="0" max="255" ng-model="b" ng-change="setHSV()"> B:<input type="text" ng-model="b" ng-change="setHSV()"><br>
+	</div>
+	<div style="background:rgb({{r}},{{g}},{{b}});width:200px;height:85px"></div>
+	
+	<div>
+	<input type="range" min="0" max="255" ng-model="h" ng-change="setRGB()"> H:<input type="text" ng-model="h" ng-change="setRGB()"><br>
+	<input type="range" min="0" max="255" ng-model="s" ng-change="setRGB()"> S:<input type="text" ng-model="s" ng-change="setRGB()"><br>
+	<input type="range" min="0" max="255" ng-model="v" ng-change="setRGB()"> I:<input type="text" ng-model="v" ng-change="setRGB()"><br>
+	</div>
+	
+
+
+	<script src="js/angular.min.js"></script>
+	
+	<script>
+	angular.module('myapp',[])
+	.controller('MainController',['$scope',function(s){			
+			s.setHSV=function(){
+				var hsv=rgbToHsv(s.r,s.g,s.b);
+				s.h=hsv[0];s.s=hsv[1];s.v=hsv[2];
+			}
+			s.setRGB = function(){
+				var rgb=hsvToRgb(s.h,s.s,s.v);
+				s.r=rgb[0];s.g=rgb[1];s.b=rgb[2];
+			}
+			s.r=224;s.g=138;s.b=224;s.setHSV();
+	}]);	
+	
+	var hsvToRgb=function(h, s, v) {			
+		h=h/255; s=s/255; v=v/255;
+		var r, g, b, i = Math.floor(h * 6), f = h * 6 - i, p = v * (1 - s), q = v * (1 - f * s), t = v * (1 - (1 - f) * s);
+		switch (i % 6) {
+		  case 0:r = v, g = t, b = p;break;
+		  case 1:r = q, g = v, b = p;break;
+		  case 2:r = p, g = v, b = t;break;
+		  case 3:r = p, g = q, b = v;break;
+		  case 4:r = t, g = p, b = v;break;
+		  case 5:r = v, g = p, b = q;break;
+		}
+		return [Math.round(r * 255), Math.round(g * 255), Math.round(b * 255)];
+	  };
+var rgbToHsv=function(r, g, b) {
+		r = r / 255, g = g / 255, b = b / 255;
+		var max = Math.max(r, g, b),min = Math.min(r, g, b), h, s, v = max, d = max - min;	s = max == 0 ? 0 : d / max;
+		if (max == min) { 
+			h = 0; 
+		} else {
+		  switch (max) {
+			case r:  h = (g - b) / d + (g < b ? 6 : 0);		  break;
+			case g:	  h = (b - r) / d + 2;  break;
+			case b:  h = (r - g) / d + 4;  break;
+		  }
+		  h /= 6;
+		}
+		return [Math.round(h*255),Math.round(s*255), Math.round(v*255)];
+	  };
+	
+	</script>
+</body>
+</html>

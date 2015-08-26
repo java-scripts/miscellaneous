@@ -41,14 +41,16 @@
       <tr>
         <td style="width:100px">ImagePuzzle</td>
         <td colspan="2">
-          Image Size
-          <input type="range" id="sx" value="600" min="100" max="1000" step="50" onchange="loadImagefromURL()">
+        
+          <input type="range" id="sx" value="600" min="100" max="1000" step="50" onchange="loadImage()">
         </td>
       </tr>
       <tr>
         <td rowspan="3"></td>
         <td>
-          <div id="orizinalImage"></div>
+          <div id="orizinalImage">
+			<img src="" />
+		  </div>
           <div id="puzzleImage"></div>
         </td>
         <td>
@@ -73,47 +75,41 @@
       <tr>
 
         <td class="td">
-          <input type="text" id="bgimg" placeholder="Paste Image URL here" style="width:400px" value="http://katrinakaifpage.com/wp-content/uploads/2013/06/Katrina-Kaif-4.jpg">
-          <input type="button" value="Load" style="width: 250px;" onclick="loadImagefromURL();">
+           <input type="file" id="fileInput" accept="image/*" >
         </td>
       </tr>
     </table>
   </div>
-  Copy and Paste the below URLs
-  <br>
-
-  <input type="text" class="autoselect" onclick="autoSelect(this)" value="http://katrinakaifpage.com/wp-content/uploads/2013/06/Katrina-Kaif-4.jpg">
-  <br>
-  <input type="text" class="autoselect" onclick="autoSelect(this)" value="http://katrinakaiffans.com/wp-content/uploads/Katrina-Kaif-Quotes-HD-wallpaper.jpg">
-
-
-</body>
+ </body>
 
 <script src="js/jquery.min.js"></script>
 
 <script>
-  $(document).ready(function() {
-    loadImagefromURL();
-    $('#bgimg').focus(function() {
-      oldval = $(this).val();
-      $(this).val('');
-    }).blur(function() {
-      if ($(this).val() == "") {
-        $(this).val(oldval.trim());
-      }
-    });
-  });
-
+ $('#fileInput').change(function(evt) {
+  var tgt = evt.target || window.event.srcElement,
+    files = tgt.files;
+  // FileReader support
+  if (FileReader && files && files.length) {
+    var fr = new FileReader();
+    fr.onload = function() {
+      var img = $('#orizinalImage img')[0]
+      img.src = fr.result;
+		loadImage();
+    };
+    fr.readAsDataURL(files[0]);
+  }
+});
+  
   var initialState; //contains the positions of all elements
   var finalState;
   var oldObject = null;
   var newObject = null;
 
-  function loadImagefromURL() {
+  function loadImage() {
     $('#puzzleImage').hide();
-    bgurl = $('#bgimg').val();
+    bgurl = $('#orizinalImage img').attr('src');
     sx = parseInt($('#sx').val());
-    //$('#orizinalImage').empty();
+    $('#orizinalImage').empty();
     $('#orizinalImage').empty().append('<img src="' + bgurl + '" style="width:' + sx + 'px">').show();
     var image = $('#orizinalImage').children().get(0);
     image.onload = function() {

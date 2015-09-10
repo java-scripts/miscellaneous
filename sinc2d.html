@@ -3,16 +3,19 @@
 </style>
 <script src="js/angular.min.js"></script>
 </head>
-<body ng-controller="mainController" style="background:grey;">           
-	<table>
-		<tr ng-repeat="i in data">
-			<td ng-repeat="j in i track by $index" style="background:rgb({{j}},{{255-j}},{{255-j}});width:{{w}}px; height:{{h}}px"> </td>
-		</tr>
-	</table>              
+<body ng-controller="mainController" style="background:grey;">	
+	<svg width="100%" height="100%">
+		<g ng-repeat="i in data" ng-attr-transform="translate(0,{{$index*w/2+100}})">
+			<g ng-repeat="j in i track by $index" ng-attr-transform="translate({{$index*w}},0)">
+			<rect ng-attr-width="{{w}}" ng-attr-height="{{w/2}}" ng-attr-fill="rgb({{j}},{{255-j}},{{255-j}})" ng-attr-transform="rotate({{Math.sqrt(j)*2}},{{-2*j}},0)" ></rect>
+			</g>
+		</g>	
+	</svg>
 <script>
 (function(){
 angular.module('myapp',[])
-	.controller('mainController',function($scope,$timeout,$window){                           
+	.controller('mainController',function($scope,$timeout,$window){ 
+		$scope.Math = window.Math;
 		$scope.counter=0;$scope.m = 10;$scope.n = 20;                               
 		$scope.h = parseInt($window.innerHeight/$scope.m);
 		$scope.w = parseInt($window.innerWidth/$scope.n);

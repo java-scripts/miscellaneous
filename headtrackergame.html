@@ -1,4 +1,12 @@
 
+<style>
+#inputVideo
+{
+	transform: rotateY(180deg);
+	-webkit-transform:rotateY(180deg); /* Safari and Chrome */
+	-moz-transform:rotateY(180deg); /* Firefox */
+}
+</style>
 <div>
 <canvas id="outputCanvas" width="640" height="420" style="background:black;"></canvas>
 </div>
@@ -15,7 +23,7 @@
 Ref: head tracking Source at
 <a href="http://auduno.tumblr.com/post/25125149521/head-tracking-with-webrtc">head tracking with webrtc</a>
 </div>
-<script src="https://rawgithub.com/auduno/headtrackr/master/headtrackr.js"></script>
+<script src="js/headtrackr.js"></script>
 <script>
 
 var ctx, canvas,cw,ch,cx,cy;

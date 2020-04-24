@@ -1,0 +1,22 @@
+<style>
+    .hide {
+        display: none;
+    }
+
+    .blur {
+        -webkit-filter: blur(1px);
+    }
+
+#canvas{
+	transform: rotateY(180deg);
+	-webkit-transform:rotateY(180deg); /* Safari and Chrome */
+	-moz-transform:rotateY(180deg); /* Firefox */
+}
+</style>
+
+<body>
+    <video id="video" width="640" height="480" autoplay class="hide"></video>
+    <input type="color" onchange="setColor(this.value);">
+    <canvas id="canvas" width="640" height="480" class="blur"></canvas>
+    <script src="js/colortrace.js"></script>
+</body>
